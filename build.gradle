@@ -1,0 +1,72 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+group               = 'co.paralleluniverse'
+version             = '0.1.0-SNAPSHOT'
+status              = 'integration'
+description         = 'Quasar Actors with ZeroMQ and Kafka'
+
+ext.classifier      = ':jdk8' // ':'
+sourceCompatibility = 1.8     // 1.7
+targetCompatibility = 1.8     // 1.7
+
+ext.quasarVer       = '0.7.5-SNAPSHOT'
+ext.comsatVer       = '0.7.0'
+ext.jzmqVer         = '3.1.0'
+ext.slf4jSimpleVer  = '1.7.21'
+ext.junitVer        = '4.12'
+ext.kafkaClientsVer = '0.9.0.1'
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+configurations {
+    quasar
+}
+
+configurations.all {
+    resolutionStrategy {
+        failOnVersionConflict()
+
+        force "org.slf4j:slf4j-api:${slf4jSimpleVer}"
+        force "org.apache.kafka:kafka-clients:$kafkaClientsVer"
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://oss.sonatype.org/content/repositories/releases' }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+}
+
+dependencies {
+    compile "co.paralleluniverse:quasar-core:${quasarVer}${classifier}"
+    compile "co.paralleluniverse:quasar-actors:${quasarVer}"
+
+    compile "org.zeromq:jzmq:${jzmqVer}"
+
+    compile "co.paralleluniverse:comsat-kafka:${comsatVer}"
+
+    quasar "co.paralleluniverse:quasar-core:${quasarVer}${classifier}@jar"
+
+    runtime "org.slf4j:slf4j-simple:${slf4jSimpleVer}"
+
+    testCompile "junit:junit:$junitVer"
+}
+
+applicationDefaultJvmArgs = [
+     '-Dco.paralleluniverse.fibers.detectRunawayFibers=false',
+     "-javaagent:${configurations.quasar.singleFile}" // =v, =d
+]
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+}
+
+// mainClassName = 'co.paralleluniverse.actors.integration.examples.direct.zeromq.Main'
+mainClassName = 'co.paralleluniverse.actors.integration.examples.proxied.zeromq.Main'
+
+// mainClassName = 'co.paralleluniverse.actors.integration.examples.direct.kafka.Main'
+// mainClassName = 'co.paralleluniverse.actors.integration.examples.proxied.kafka.Main'
+
+defaultTasks 'run'
