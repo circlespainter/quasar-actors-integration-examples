@@ -4,8 +4,6 @@ import co.paralleluniverse.actors.Actor;
 import co.paralleluniverse.actors.ActorRef;
 import co.paralleluniverse.actors.ActorSpec;
 import co.paralleluniverse.actors.BasicActor;
-import co.paralleluniverse.common.util.CheckedCallable;
-import co.paralleluniverse.fibers.FiberAsync;
 import co.paralleluniverse.fibers.FiberUtil;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.fibers.kafka.FiberKafkaProducer;
@@ -17,11 +15,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static co.paralleluniverse.actors.integration.examples.Util.call;
 
 @SuppressWarnings("WeakerAccess")
 public final class KafkaProxies implements AutoCloseable {
@@ -224,12 +221,9 @@ public final class KafkaProxies implements AutoCloseable {
 
                 // Try receiving
                 //noinspection Convert2Lambda
-                final ConsumerRecords<Void, byte[]> records = FiberAsync.runBlocking(e, new CheckedCallable<ConsumerRecords<Void, byte[]>, RuntimeException>() {
-                    @Override
-                    public ConsumerRecords<Void, byte[]> call() throws RuntimeException {
-                        return consumer.poll(100L);
-                    }
-                });
+                final ConsumerRecords<Void, byte[]> records = call(es, () ->
+                    consumer.poll(100L)
+                );
                 for (final ConsumerRecord<Void, byte[]> record : records) {
                     final byte[] v = record.value();
                     try (final ByteArrayInputStream bis = new ByteArrayInputStream(v);

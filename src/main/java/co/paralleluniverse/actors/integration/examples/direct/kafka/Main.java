@@ -44,7 +44,7 @@ public final class Main {
 
     private static final MailboxConfig DEFAULT_MBC = new MailboxConfig();
     private static final String BOOTSTRAP = "localhost:9092";
-    private static final String TOPIC = "topic1";
+    private static final String TOPIC = "kafkadirect";
 
     private final static Properties producerConfig;
 

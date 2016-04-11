@@ -63,8 +63,8 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.12'
 }
 
-// mainClassName = 'co.paralleluniverse.actors.integration.examples.direct.zeromq.Main'
-mainClassName = 'co.paralleluniverse.actors.integration.examples.proxied.zeromq.Main'
+mainClassName = 'co.paralleluniverse.actors.integration.examples.direct.zeromq.Main'
+// mainClassName = 'co.paralleluniverse.actors.integration.examples.proxied.zeromq.Main'
 
 // mainClassName = 'co.paralleluniverse.actors.integration.examples.direct.kafka.Main'
 // mainClassName = 'co.paralleluniverse.actors.integration.examples.proxied.kafka.Main'
