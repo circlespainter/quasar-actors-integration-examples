@@ -6,11 +6,14 @@ Clone (or download sources from a release) and [install ZeroMQ 4.1](https://raw.
 
 ## Apache Kafka
 
-[Download and uncompress the Kafka 0.9.0.1 distro](http://kafka.apache.org/downloads.html) and start ZooKeeper on port 2181 and Kafka on port 9092 in two different terminals:
+[Download and uncompress the Kafka 0.9.0.1 distro](http://kafka.apache.org/downloads.html) and start ZooKeeper on port 2181 and then Kafka on port 9092 using two different terminals:
 
 ```
-1> bin/zookeeper-server-start.sh config/zookeeper.properties
-2> bin/kafka-server-start.sh config/server.properties
+bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+```
+bin/kafka-server-start.sh config/server.properties
 ```
 
 Then in another terminal create your topics like so:
