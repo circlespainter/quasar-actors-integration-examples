@@ -6,4 +6,20 @@ Clone (or download sources from a release) and [install ZeroMQ 4.1](https://raw.
 
 ## Apache Kafka
 
-[Download and uncompress the Kafka 0.9.0.1 distro](http://kafka.apache.org/downloads.html) and start ZooKeeper on port 2181 and Kafka on port 9092, then select your main class at the end of `build.gradle` and run `./gradlew`.
+[Download and uncompress the Kafka 0.9.0.1 distro](http://kafka.apache.org/downloads.html) and start ZooKeeper on port 2181 and Kafka on port 9092 in two different terminals:
+
+```
+1> bin/zookeeper-server-start.sh config/zookeeper.properties
+2> bin/kafka-server-start.sh config/server.properties
+```
+
+Then in another terminal create your topics like so:
+
+```
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 2 --topic kafkadirect
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 2 --topic kafkaproxied
+```
+
+Finally select your main class at the end of `build.gradle` and run `./gradlew`.
+
+You can use `. cleanup-kafka.sh` to remove all ZooKeeper and Kafka data files if you want to start from a clean situation.
