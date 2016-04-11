@@ -187,22 +187,23 @@ public final class KafkaProxies implements AutoCloseable {
                         //noinspection unchecked
                         final ProxiedMsg rmsg = (ProxiedMsg) m;
                         final List<ActorRef> l = subscribers.get(rmsg.actorID);
-                        if (l != null && l.size() > 0) // There are subscribers
-                            return m;
+                        if (l != null) {
+                            boolean sent = false;
+                            for (final ActorRef r : l) {
+                                //noinspection unchecked
+                                r.send(rmsg.payload);
+                                sent = true;
+                            }
+                            if (sent) // Someone was listening, remove from queue
+                                return m;
+                        }
                     }
                     return null; // No subscribers (leave in queue) or no messages
                 });
-                // Something processable is there
+                // Something from queue
                 if (msg != null) {
                     if (EXIT.equals(msg)) {
                         return null;
-                    }
-                    //noinspection unchecked
-                    final ProxiedMsg rmsg = (ProxiedMsg) msg;
-                    final List<ActorRef> l = subscribers.get(rmsg.actorID);
-                    for (final ActorRef r : l) {
-                        //noinspection unchecked
-                        r.send(rmsg.payload);
                     }
                     continue; // Go to next cycle -> precedence to queue
                 }

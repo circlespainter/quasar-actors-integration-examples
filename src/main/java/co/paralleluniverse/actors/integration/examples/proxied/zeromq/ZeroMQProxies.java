@@ -207,8 +207,16 @@ public final class ZeroMQProxies implements AutoCloseable {
                         if (o != null) {
                             //noinspection unchecked
                             final List<ActorRef> l = subscribers.get(srcZMQEndpoint);
-                            if (l != null && l.size() > 0) // There are subscribers
-                                return o;
+                            if (l != null) {
+                                boolean sent = false;
+                                for (final ActorRef r : l) {
+                                    //noinspection unchecked
+                                    r.send(o);
+                                    sent = true;
+                                }
+                                if (sent) // Someone was listening, remove from queue
+                                    return o;
+                            }
                         }
                         return null; // No subscribers (leave in queue) or no messages
                     });
@@ -216,12 +224,6 @@ public final class ZeroMQProxies implements AutoCloseable {
                     if (m != null) {
                         if (EXIT.equals(m)) {
                             return null;
-                        }
-                        //noinspection unchecked
-                        final List<ActorRef> l = subscribers.get(srcZMQEndpoint);
-                        for (final ActorRef r : l) {
-                            //noinspection unchecked
-                            r.send(m);
                         }
                         continue; // Go to next cycle -> precedence to queue
                     }
