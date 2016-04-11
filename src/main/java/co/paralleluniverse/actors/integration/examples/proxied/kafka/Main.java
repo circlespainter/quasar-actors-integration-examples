@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutionException;
 public final class Main {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         try (final KafkaProxies proxies = new KafkaProxies("localhost:9092", "kafkaproxied")) {
-            final ProducerActor pa = Actor.newActor(ProducerActor.class, proxies.create("consumer", 1024));
+            final ProducerActor pa = Actor.newActor(ProducerActor.class, proxies.create("consumer"));
             final ConsumerActor ca = Actor.newActor(ConsumerActor.class);
             pa.spawn();
             System.err.println("USER PRODUCER started");

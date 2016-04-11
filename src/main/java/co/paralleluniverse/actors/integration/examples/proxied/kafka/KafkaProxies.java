@@ -50,10 +50,9 @@ public final class KafkaProxies implements AutoCloseable {
      * Creates and returns a new Kafka proxy actor.
      *
      * @param actorID  The ID of the target actor
-     * @param maxBytes The maximum size of the Kryo-serialized message
      * @param <M>      The base type of the message (must be serializable by Kryo)
      */
-    public final <M> ActorRef<M> create(String actorID, int maxBytes) {
+    public final <M> ActorRef<M> create(String actorID) {
         ensureOpen();
 
         final ActorRef<M> a;
@@ -61,8 +60,8 @@ public final class KafkaProxies implements AutoCloseable {
             //noinspection unchecked
             a = Actor.newActor (
                 new ActorSpec<>(
-                    ProducerActor.class.getConstructor(KafkaProxies.class, String.class, Integer.TYPE),
-                    new Object[] { this, actorID, maxBytes }
+                    ProducerActor.class.getConstructor(KafkaProxies.class, String.class),
+                    new Object[] { this, actorID }
                 )
             ).spawn();
         } catch (final NoSuchMethodException e) {
@@ -141,17 +140,15 @@ public final class KafkaProxies implements AutoCloseable {
             });
         } finally {
             producer.close();
-            e.shutdown();
+            es.shutdown();
         }
     }
 
     public final class ProducerActor<M> extends BasicActor<M, Void> {
         private final String actorID;
-        private final int bufferSize;
 
-        public ProducerActor(String actorID, int bufferSize) {
+        public ProducerActor(String actorID) {
             this.actorID = actorID;
-            this.bufferSize = bufferSize;
         }
 
         @Override
@@ -162,7 +159,7 @@ public final class KafkaProxies implements AutoCloseable {
                 if (EXIT.equals(m))
                     return null;
 
-                try (final ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize);
+                try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                      final ObjectOutputStream oos = new ObjectOutputStream(baos)) {
                     oos.writeObject(new ProxiedMsg(actorID, m));
                     oos.flush();
