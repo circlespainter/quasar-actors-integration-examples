@@ -43,7 +43,7 @@ public final class KafkaProxies implements AutoCloseable {
     public KafkaProxies(String bootstrap, String topic, Properties kafkaProducerPropertiesOverride, Properties kafkaConsumerPropertiesOverride) {
         this.topic = topic;
         producer = buildProducer(bootstrap, kafkaProducerPropertiesOverride);
-        startConsumer(bootstrap, kafkaConsumerPropertiesOverride);
+        startConsumers(bootstrap, kafkaConsumerPropertiesOverride);
     }
 
     /**
@@ -175,14 +175,6 @@ public final class KafkaProxies implements AutoCloseable {
     }
 
     public final class ConsumerActor extends BasicActor<Object, Void> {
-        private final KafkaConsumer<Void, byte[]> consumer;
-        private final Map<String, List<ActorRef>> subscribers;
-
-        public ConsumerActor(KafkaConsumer<Void, byte[]> consumer, Map<String, List<ActorRef>> subscribers) {
-            this.consumer = consumer;
-            this.subscribers = subscribers;
-        }
-
         @Override
         protected Void doRun() throws InterruptedException, SuspendExecution {
             //noinspection InfiniteLoopStatement
@@ -203,7 +195,6 @@ public final class KafkaProxies implements AutoCloseable {
                 // Something processable is there
                 if (msg != null) {
                     if (EXIT.equals(msg)) {
-                        consumer.close();
                         return null;
                     }
                     //noinspection unchecked
@@ -219,7 +210,7 @@ public final class KafkaProxies implements AutoCloseable {
                 // Try receiving
                 //noinspection Convert2Lambda
                 final ConsumerRecords<Void, byte[]> records = call(es, () ->
-                    consumer.poll(100L)
+                    consumer.get().poll(100L)
                 );
                 for (final ConsumerRecord<Void, byte[]> record : records) {
                     final byte[] v = record.value();
@@ -246,8 +237,6 @@ public final class KafkaProxies implements AutoCloseable {
         }
     }
 
-    private static final ExecutorService e = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
     private static final Object EXIT = new Object();
 
     private final static Properties baseProducerConfig;
@@ -273,6 +262,9 @@ public final class KafkaProxies implements AutoCloseable {
 
     private final String topic;
     private final FiberKafkaProducer<Void, byte[]> producer;
+
+    private ThreadLocal<KafkaConsumer<Void, byte[]>> consumer;
+    private ExecutorService es;
 
     private static final class ProxiedMsg implements Serializable {
         private static final long serialVersionUID = 0L;
@@ -304,7 +296,7 @@ public final class KafkaProxies implements AutoCloseable {
         return new FiberKafkaProducer<>(new KafkaProducer<>(p));
     }
 
-    private void startConsumer(String bootstrap, Properties kafkaConsumerPropertiesOverride) {
+    private void startConsumers(String bootstrap, Properties kafkaConsumerPropertiesOverride) {
         final Properties p = new Properties(baseConsumerConfig);
         if (kafkaConsumerPropertiesOverride != null)
             p.putAll(kafkaConsumerPropertiesOverride);
@@ -314,19 +306,34 @@ public final class KafkaProxies implements AutoCloseable {
         p.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         p.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
-        final KafkaConsumer<Void, byte[]> consumer = new KafkaConsumer<>(p);
-        consumer.subscribe(Collections.singletonList(topic));
-        try {
-            consumers.add (
-                Actor.newActor (
-                    new ActorSpec<>(
-                        ConsumerActor.class.getConstructor(KafkaProxies.class, KafkaConsumer.class, Map.class),
-                        new Object[] { this, consumer, subscribers }
-                    )
-                ).spawn()
-            );
-        } catch (final NoSuchMethodException e) {
-            throw new AssertionError(e);
+        final KafkaConsumer<Void, byte[]> tmp = new KafkaConsumer<>(p);
+        tmp.subscribe(Collections.singletonList(topic));
+        int partitions = tmp.partitionsFor(topic).size();
+        tmp.close();
+
+        es = Executors.newFixedThreadPool(partitions);
+        consumer = new ThreadLocal<KafkaConsumer<Void, byte[]>>() {
+            @Override
+            protected KafkaConsumer<Void, byte[]> initialValue() {
+                final KafkaConsumer<Void, byte[]> r = new KafkaConsumer<>(p);
+                r.subscribe(Collections.singletonList(topic));
+                return r;
+            }
+        };
+
+        for (int i = 0 ; i < partitions ; i++) {
+            try {
+                consumers.add (
+                    Actor.newActor (
+                        new ActorSpec<> (
+                            ConsumerActor.class.getConstructor(KafkaProxies.class),
+                            new Object[] { this }
+                        )
+                    ).spawn()
+                );
+            } catch (final NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
         }
     }
 }
