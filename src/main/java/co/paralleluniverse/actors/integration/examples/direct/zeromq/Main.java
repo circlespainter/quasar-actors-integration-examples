@@ -34,7 +34,7 @@ public final class Main {
         }
     }
 
-    private static final String TARGET_ADDR = "tcp://mbp-fabio-lnx:8000";
+    private static final String TARGET_ADDR = "tcp://localhost:8000";
 
     private static final ExecutorService ep = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
