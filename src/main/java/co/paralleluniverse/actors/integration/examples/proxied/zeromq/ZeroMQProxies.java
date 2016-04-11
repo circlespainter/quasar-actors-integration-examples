@@ -197,14 +197,35 @@ public final class ZeroMQProxies implements AutoCloseable {
             try(final ZMQ.Socket src = zmq.socket(ZMQ.REP)) {
                 System.err.printf("PROXY CONSUMER: binding %s\n", srcZMQEndpoint);
                 Util.exec(e, () -> src.bind(srcZMQEndpoint));
-                src.setReceiveTimeOut(1000);
+                src.setReceiveTimeOut(100);
                 //noinspection InfiniteLoopStatement
                 for (;;) {
-                    final Object m = tryReceive();
-                    if (EXIT.equals(m)) {
-                        System.err.println("PROXY CONSUMER: exiting");
-                        return null;
+                    // Try extracting from queue
+                    final Object m = tryReceive((Object o) -> {
+                        if (EXIT.equals(o))
+                            return EXIT;
+                        if (o != null) {
+                            //noinspection unchecked
+                            final List<ActorRef> l = subscribers.get(srcZMQEndpoint);
+                            if (l != null && l.size() > 0) // There are subscribers
+                                return o;
+                        }
+                        return null; // No subscribers (leave in queue) or no messages
+                    });
+                    // Something processable is there
+                    if (m != null) {
+                        if (EXIT.equals(m)) {
+                            return null;
+                        }
+                        //noinspection unchecked
+                        final List<ActorRef> l = subscribers.get(srcZMQEndpoint);
+                        for (final ActorRef r : l) {
+                            //noinspection unchecked
+                            r.send(m);
+                        }
+                        continue; // Go to next cycle -> precedence to queue
                     }
+
                     System.err.println("PROXY CONSUMER: receiving");
                     final byte[] msg = Util.call(e, src::recv);
                     if (msg != null) {
