@@ -56,6 +56,20 @@ public final class ZeroMQProxies implements AutoCloseable {
     }
 
     /**
+     * Releases a ZeroMQ proxy actor.
+     *
+     * @param trgtZMQAddress The ZeroMQ address of the target actor.
+     */
+    @SuppressWarnings("unused")
+    public final void drop(String trgtZMQAddress) throws ExecutionException, InterruptedException {
+        ensureOpen();
+
+        //noinspection unchecked
+        FiberUtil.runInFiber(() -> producerProxies.get(trgtZMQAddress).send(EXIT));
+        producerProxies.remove(trgtZMQAddress);
+    }
+
+    /**
      * Subscribes a consumer actor to a ZeroMQ endpoint.
      *
      * @param consumer The consumer actor.
