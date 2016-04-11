@@ -111,14 +111,7 @@ public final class Main {
                 consumer.subscribe(Collections.singletonList(TOPIC));
                 for (;;) {
                     System.err.println("CONSUMER: polling");
-                    //noinspection Convert2Lambda
-                    final ConsumerRecords<Integer, byte[]> records = FiberAsync.runBlocking(e, new CheckedCallable<ConsumerRecords<Integer, byte[]>, RuntimeException>() {
-                        @Override
-                        public final ConsumerRecords<Integer, byte[]> call() throws RuntimeException {
-                            return consumer.poll(1000L);
-                        }
-                    });
-//                    final ConsumerRecords<Integer, byte[]> records = consumer.poll(1000L);
+                    final ConsumerRecords<Integer, byte[]> records = call(e, () -> consumer.poll(1000L));
                     System.err.println("CONSUMER: received");
                     for (final ConsumerRecord<Integer, byte[]> record : records) {
                         final byte[] v = record.value();
