@@ -36,7 +36,7 @@ public final class Main {
 
     private static final String TARGET_ADDR = "tcp://localhost:8000";
 
-    private static final ExecutorService ep = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService ep = Executors.newFixedThreadPool(2);
 
     @SuppressWarnings("WeakerAccess")
     public static final class ProducerActor extends BasicActor<Object, Void> {
@@ -71,7 +71,7 @@ public final class Main {
         }
     }
 
-    private static final ExecutorService ec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService ec = Executors.newFixedThreadPool(2);
 
     private static final String SRC_BIND_ENDPOINT = "tcp://*:8000";
 

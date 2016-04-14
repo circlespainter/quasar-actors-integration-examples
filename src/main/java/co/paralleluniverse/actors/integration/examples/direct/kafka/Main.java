@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import static co.paralleluniverse.actors.integration.examples.Util.*;
 
 public final class Main {
-    private static final ExecutorService e = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService e = Executors.newFixedThreadPool(2);
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         try {

@@ -259,7 +259,7 @@ public final class ZeroMQProxies implements AutoCloseable {
             throw new IllegalStateException("Already closed.");
     }
 
-    private static final ExecutorService e = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService e = Executors.newFixedThreadPool(2);
 
     private static final String ACK = "ACK";
     private static final Object EXIT = new Object();
