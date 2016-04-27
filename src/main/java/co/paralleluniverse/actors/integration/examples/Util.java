@@ -14,27 +14,21 @@ public final class Util {
 
     public static final int MSGS = 1000;
 
-    @Suspendable
     public static void exec(ExecutorService es, Runnable r) throws InterruptedException, SuspendExecution {
         try {
             runBlocking(es, (CheckedCallable<Void, Exception>) () -> {
                 r.run();
                 return null;
             });
-        } catch (final InterruptedException | SuspendExecution e) {
-            throw e;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Suspendable
     public static <V> V call(ExecutorService es, Callable<V> c) throws InterruptedException, SuspendExecution {
         try {
             //noinspection RedundantCast
             return runBlocking(es, (CheckedCallable<V, Exception>) c::call);
-        } catch (final InterruptedException | SuspendExecution e) {
-            throw e;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
